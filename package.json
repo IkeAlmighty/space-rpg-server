@@ -1,0 +1,33 @@
+{
+  "name": "distributed-server",
+  "version": "1.0.0",
+  "description": "An extensible server communicates with a network of other server instances via a central database",
+  "main": "server.js",
+  "scripts": {
+    "test": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ikealmighty/distributed-server.git"
+  },
+  "keywords": [
+    "distributed",
+    "server",
+    "net",
+    "mongodb"
+  ],
+  "author": "ikealmighty",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ikealmighty/distributed-server/issues"
+  },
+  "homepage": "https://github.com/ikealmighty/distributed-server#readme",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "mongodb": "^6.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
