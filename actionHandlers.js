@@ -2,7 +2,7 @@
 
 // Global state object
 const state = {
-  counter: 0,
+  entities: [],
 };
 
 // Function to handle the 'add' action

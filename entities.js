@@ -90,6 +90,20 @@ class Entity {
     return `${prefix}-${uniqueNumber}`;
   }
 
+  getPosition(timestamp) {
+    // Calculate new position based on thrust vectors and time elapsed
+    this.propulsion.forEach((thrust) => {
+      const timeSinceThrust = timestamp - thrust.timestamp;
+      const acceleration = thrust.vector.map(
+        (component) => component / this.mass
+      );
+      this.position = this.position.map(
+        (coord, index) =>
+          coord + acceleration[index] * timeSinceThrust ** 2 * 0.5
+      );
+    });
+  }
+
   addEntityInside(entity) {
     if (this.entitiesInside.length < this.storageCapacity) {
       this.entitiesInside.push(entity);
