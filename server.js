@@ -17,9 +17,7 @@ if (!mongoURI || !dbName) {
 const eventEmitter = new EventEmitter();
 
 const handlers = {
-  add: actionHandlers.addAction,
-  multiply: actionHandlers.multiplyAction,
-  // Add more action handlers as needed
+  ...actionHandlers,
 };
 
 const serverId = process.env.SERVER_ID || generateUniqueId();
@@ -71,10 +69,10 @@ async function setupServer() {
           }
 
           const result = await new Promise((resolve) => {
-            eventEmitter.emit(action, clientId, action, args, resolve);
+            eventEmitter.emit(action, args, resolve);
           });
 
-          socket.write(JSON.stringify({result}));
+          socket.write(JSON.stringify(result));
         } catch (error) {
           console.error("Error processing request:", error.message);
         }
