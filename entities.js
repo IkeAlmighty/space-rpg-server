@@ -70,18 +70,21 @@ class Entity {
     subtype,
     mass,
     storageCapacity,
-    resources = 0,
-    propulsion = []
+    resources = {},
+    thrustVectors = [],
+    gravityInfluences = []
   ) {
     this.id = id;
     this.name = name;
     this.position = position;
+    this.lastPositionUpdateTimeStamp = Date.now();
     this.subtype = subtype;
     this.mass = mass;
     this.storageCapacity = storageCapacity;
     this.resources = resources;
     this.entitiesInside = [];
-    this.propulsion = propulsion;
+    this.thrustVectors = thrustVectors;
+    this.gravityInfluences = gravityInfluences;
   }
 
   static generateUniqueId(prefix = "entity") {
@@ -90,18 +93,60 @@ class Entity {
     return `${prefix}-${uniqueNumber}`;
   }
 
-  getPosition(timestamp) {
-    // Calculate new position based on thrust vectors and time elapsed
-    this.propulsion.forEach((thrust) => {
-      const timeSinceThrust = timestamp - thrust.timestamp;
-      const acceleration = thrust.vector.map(
-        (component) => component / this.mass
+  updatePosition(timeStamp = Date.now()) {
+    //if the timestamp given is before the last recorded position's timestamp, then throw an error:
+    if (timeStamp < this.lastPositionUpdateTimeStamp) {
+      throw new Error(
+        "invalid timestamp: the last update was after the timestamp provided."
       );
-      this.position = this.position.map(
-        (coord, index) =>
-          coord + acceleration[index] * timeSinceThrust ** 2 * 0.5
-      );
+    }
+
+    // use recursion make sure this updatePosition has been called in
+    // increments of 'step' ms all the way up to the provided timestamp.
+    const step = 250;
+    let timeElapsed = timeStamp - this.lastPositionUpdateTimeStamp;
+    if (timeElapsed > step) {
+      this.updatePosition(timeStamp - step);
+      timeElapsed = step;
+    }
+
+    const resultantVector = {x: 0, y: 0, z: 0};
+
+    // first, add gravityVectors to the resultant vector at this timestamp
+    this.gravityInfluences.forEach((influentialEntity) => {
+      // make sure the position of the influential enitity is up to date:
+      influentialEntity.updatePosition(timestamp);
+      const {x, y, z} = this.position;
+      const dx = x - influentialEntity.position.x;
+      const dy = y - influentialEntity.position.y;
+      const dz = z - influentialEntity.position.z;
+      const r = Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2);
+      const G = 6.6743e-11;
+      const M = influentialEntity.mass;
+      const gravityForce = (G * M * m) / r ** 2;
+      const unitVector = {
+        x: dx / r,
+        y: dy / r,
+        z: dz / r,
+      };
+
+      resultantVector.x += gravityForce * unitVector.x;
+      resultantVector.y += gravityForce * unitVector.y;
+      resultantVector.z += gravityForce * unitVector.z;
     });
+
+    // then, add thrustVectors to the resultant vector at this timestamp
+    this.gravityVectors.forEach((vector) => {
+      resultantVector.x += vector.x;
+      resultantVector.y += vector.y;
+      resultantVector.z += vector.z;
+    });
+
+    // finally, detemine the new location of the entity based on the resultant force vector
+    this.position.x = (resultantVector.x * timeElapsed ** 2) / this.mass;
+    this.position.y = (resultantVector.y * timeElapsed ** 2) / this.mass;
+    this.position.z = (resultantVector.z * timeElapsed ** 2) / this.mass;
+    this.lastPositionUpdateTimeStamp = Date.now();
   }
 
   addEntityInside(entity) {
@@ -111,6 +156,15 @@ class Entity {
     } else {
       console.log(`Storage capacity of ${this.name} is full.`);
       return false; // Entity could not be added due to full capacity
+    }
+  }
+
+  addGravityInfluence(entity) {
+    // create and add a gravity vector, if the mass of the entity
+    // is notable enough to warrant it.
+    const threshold = 9.3 * 1020; // the mass of the asteroid Ceres
+    if (entity.mass >= threshold) {
+      this.gravityInfluences.push(entity);
     }
   }
 }
